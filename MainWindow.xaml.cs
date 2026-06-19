@@ -134,9 +134,31 @@ namespace TcpServerApp
         {
             try
             {
-                var smartBinder = new SmartBinderView();
+                // ── مزامنة إعدادات الخادم مع SmartBinder ──────────────────
+                bool   serverRunning = _eliteServer.IsRunning;
+                string serverHost    = LocalIPText.Text ?? "127.0.0.1";
+                int    serverPort    = 0;
+                string serverKey     = AuthKeyTextBox.Text ?? "";
+                bool   requireKey    = RequireAuthCheckBox.IsChecked == true;
+
+                int.TryParse(PortTextBox.Text, out serverPort);
+
+                // إنشاء SmartBinder مع تمرير إعدادات الخادم النشط
+                var smartBinder = serverRunning
+                    ? new SmartBinderView(serverHost, serverPort, requireKey ? serverKey : "", serverRunning)
+                    : new SmartBinderView();
+
+                smartBinder.Owner = this;
                 smartBinder.Show();
-                LogMessage("📦 تم فتح Smart Binder");
+
+                string syncMsg = serverRunning
+                    ? $"📦 تم فتح Smart Binder — مزامن مع الخادم النشط ({serverHost}:{serverPort})"
+                    : "📦 تم فتح Smart Binder — الخادم غير نشط، يمكنك إدخال الإعدادات يدوياً";
+
+                LogMessage(syncMsg);
+                NotificationManager.Instance.Success(
+                    serverRunning ? $"مزامن مع الخادم :{serverPort}" : "الخادم غير نشط",
+                    "Smart Binder");
             }
             catch (Exception ex)
             {
